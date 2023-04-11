@@ -20,6 +20,7 @@ from selenium.webdriver.common.keys import Keys
 import pandas as pd
 import xlrd
 import tkinter
+import math
 
 
 def arkusz(): 
@@ -35,11 +36,11 @@ def arkusz():
         duzaDf = duzaDf.append(df, ignore_index=True)
         duzaDf = duzaDf.astype(str)
     if 'Asysta' in duzaDf.columns:
-        duzaDf = duzaDf[['Nazwisko', 'Imię', 'Usługa', 'Data opisu badania', 'Asysta']]
+        duzaDf = duzaDf[['Nazwisko', 'Imię', 'Usługa', 'Data opisu badania', 'Asysta', 'Wstaw']]
         duzaDf.insert(2, 'Plec', '0')
         duzaDf.insert(5, 'Inicjały', '0')
     else: 
-        duzaDf = duzaDf[['Nazwisko', 'Imię', 'Usługa', 'Data opisu badania']]
+        duzaDf = duzaDf[['Nazwisko', 'Imię', 'Usługa', 'Data opisu badania', 'Wstaw']]
         duzaDf.insert(2, 'Plec', '0')
         duzaDf.insert(5, 'Inicjały', '0')
         duzaDf.insert(6, 'Asysta', "")
@@ -53,7 +54,7 @@ def arkusz():
         #wytworzenie inicjalow
         duzaDf.iat[i,5] = duzaDf.iat[i,0][0] + '.' + duzaDf.iat[i,1][0] + '.'
         #identyfikacja plci
-        if duzaDf.iat[i, 1].endswith("A"): 
+        if duzaDf.iat[i, 1].endswith("A") or duzaDf.iat[i, 1].endswith("a"):
             duzaDf.iat[i, 2] = 1
         #wywalenie nan z asysty
         if duzaDf.iat[i, 6]=='nan': duzaDf.iat[i,6] = ""
@@ -62,12 +63,18 @@ def arkusz():
  
 def dzialanie(table, rok, kod, nazwisko, miejsce, nazwa, xpath):
     for i in range(table.shape[0]):
+        if (not float(table['Wstaw'][i])) or math.isnan(float(table['Wstaw'][i])):
+            continue
         #driver.find_element_by_xpath('//button[@title="Dodaj"]').click()
         #wait.until(EC.element_to_be_clickable((By.XPATH, "//body[1]/div[3]/div[4]/div[1]/table[1]/tbody[1]/tr[1]/td[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/fieldset[1]/table[1]/tbody[1]/tr[2]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/table[1]/tbody[1]/tr[2]/td[1]/div[1]/table[1]/tbody[1]/tr[5]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/button[1]"))).click()
         wait.until(EC.element_to_be_clickable((By.XPATH, xpath))).click()
-    for i in range(table.shape[0]):
+    i = -1
+    for ii in range(table.shape[0]):
+        if (not float(table['Wstaw'][ii])) or math.isnan(float(table['Wstaw'][ii])):
+            continue
+        i += 1
         #data
-        wait.until(EC.element_to_be_clickable((By.XPATH, "//tbody/tr[" + str(i+1) + "]/td[2]/div[1]/input[1]"))).send_keys(table.iat[i,4])
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//tbody/tr[" + str(i+1) + "]/td[2]/div[1]/input[1]"))).send_keys(table.iat[ii,4])
         #rok szkolenia
         rokSzkolenia = Select(wait.until(EC.element_to_be_clickable((By.XPATH,"//tbody/tr[" + str(i+1) + "]/td[4]/div[1]/select[1]"))))
         rokSzkolenia.select_by_value(rok)
@@ -93,15 +100,15 @@ def dzialanie(table, rok, kod, nazwisko, miejsce, nazwa, xpath):
             for j in range(int(nazwa)):
                 nazwaStazu_element.send_keys(Keys.ARROW_DOWN)
         #inicjaly
-        wait.until(EC.element_to_be_clickable((By.XPATH, "//tbody/tr[" + str(i+1) + "]/td[9]/div[1]/input[1]"))).send_keys(table.iat[i,5]) 
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//tbody/tr[" + str(i+1) + "]/td[9]/div[1]/input[1]"))).send_keys(table.iat[ii,5])
         #plec
         plec = Select(wait.until(EC.element_to_be_clickable((By.XPATH,"//tbody/tr[" + str(i+1) + "]/td[10]/div[1]/select[1]"))))
-        if table.iat[i,2]==1: plec.select_by_value('K') 
+        if table.iat[ii,2]==1: plec.select_by_value('K')
         else: plec.select_by_value('M')
         #asysta
-        wait.until(EC.element_to_be_clickable((By.XPATH, "//tbody/tr[" + str(i+1) + "]/td[11]/div[1]/input[1]"))).send_keys(table.iat[i,6])
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//tbody/tr[" + str(i+1) + "]/td[11]/div[1]/input[1]"))).send_keys(table.iat[ii,6])
         #nazwaproc
-        wait.until(EC.element_to_be_clickable((By.XPATH, "//tbody/tr[" + str(i+1) + "]/td[12]/div[1]/input[1]"))).send_keys(table.iat[i,3]) 
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//tbody/tr[" + str(i+1) + "]/td[12]/div[1]/input[1]"))).send_keys(table.iat[ii,3])
 
 class Okno(tkinter.Tk):
     def __init__(self, parent):
@@ -116,11 +123,13 @@ class Okno(tkinter.Tk):
         self.RokLbl = tkinter.Label(stepOne,text="Rok szkolenia")
         self.RokLbl.grid(row=0, column=0, sticky='E', padx=5, pady=2)
         self.RokTxt = tkinter.Entry(stepOne)
+        self.RokTxt.insert(tkinter.INSERT, '1')
         self.RokTxt.grid(row=0, column=1, columnspan=3, pady=2, sticky='WE')
         
         self.KodLbl = tkinter.Label(stepOne,text="Kod zabiegu (1/2)")
         self.KodLbl.grid(row=1, column=0, sticky='E', padx=5, pady=2)
         self.KodTxt = tkinter.Entry(stepOne)
+        self.KodTxt.insert(tkinter.INSERT, '2')
         self.KodTxt.grid(row=1, column=1, columnspan=3, pady=2, sticky='WE')
         
         self.OsobaLbl = tkinter.Label(stepOne,text="Osoba wykonująca")
@@ -131,16 +140,19 @@ class Okno(tkinter.Tk):
         self.MiejsceLbl = tkinter.Label(stepOne,text="Miejsce wykonania (które miejsce na liscie)")
         self.MiejsceLbl.grid(row=3, column=0, sticky='E', padx=5, pady=2)
         self.MiejsceTxt = tkinter.Entry(stepOne)
+        self.MiejsceTxt.insert(tkinter.INSERT, '1')
         self.MiejsceTxt.grid(row=3, column=1, columnspan=3, pady=2, sticky='WE')
         
         self.NazwaLbl = tkinter.Label(stepOne,text="Nazwa stażu (które miejsce na liscie)")
         self.NazwaLbl.grid(row=4, column=0, sticky='E', padx=5, pady=2)
         self.NazwaTxt = tkinter.Entry(stepOne)
+        self.NazwaTxt.insert(tkinter.INSERT, '1')
         self.NazwaTxt.grid(row=4, column=1, columnspan=3, pady=2, sticky='WE')
         
         self.XpathLbl = tkinter.Label(stepOne,text="Xpath")
         self.XpathLbl.grid(row=5, column=0, sticky='E', padx=5, pady=2)
         self.XpathTxt = tkinter.Entry(stepOne)
+        self.XpathTxt.insert(tkinter.INSERT, '/html/body/div[3]/div[4]/div/table/tbody/tr/td[2]/div/div/div/div/div/div[2]/fieldset/table/tbody/tr[2]/td/div/table/tbody/tr[1]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table/tbody/tr/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/table/tbody/tr[2]/td/div/table/tbody/tr[3]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table[1]/tbody/tr/td[1]/button')
         self.XpathTxt.grid(row=5, column=1, columnspan=3, pady=2, sticky='WE')
         
         self.rok = None
@@ -206,6 +218,7 @@ app = Okno(None)
 app.title("SMK Rozkurwiator 0.6")
 app.mainloop() 
 arg = [app.rok, app.kod, app.osoba, app.miejsce, app.nazwa, app.xpath]
+# print(tabela)
 dzialanie(tabela, *arg)
 input()
 # if __name__ == "__main__":
