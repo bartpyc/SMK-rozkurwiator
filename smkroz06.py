@@ -20,19 +20,43 @@ from selenium.webdriver.common.keys import Keys
 import pandas as pd
 import xlrd
 import tkinter
+import tkinter.ttk
 import math
 
 
-def arkusz(): 
+xpaths_list = {
+    #'default': '',
+    'cytologia': '/html/body/div[3]/div[4]/div/table/tbody/tr/td[2]/div/div/div/div/div/div[2]/fieldset/table/tbody/tr[2]/td/div/table/tbody/tr[1]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table/tbody/tr/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/table/tbody/tr[2]/td/div/table/tbody/tr[1]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table[1]/tbody/tr/td[1]/button',
+    'bac':       '/html/body/div[3]/div[4]/div/table/tbody/tr/td[2]/div/div/div/div/div/div[2]/fieldset/table/tbody/tr[2]/td/div/table/tbody/tr[1]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table/tbody/tr/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/table/tbody/tr[2]/td/div/table/tbody/tr[2]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table[1]/tbody/tr/td[1]/button',
+    'histpat':   '/html/body/div[3]/div[4]/div/table/tbody/tr/td[2]/div/div/div/div/div/div[2]/fieldset/table/tbody/tr[2]/td/div/table/tbody/tr[1]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table/tbody/tr/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/table/tbody/tr[2]/td/div/table/tbody/tr[3]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table[1]/tbody/tr/td[1]/button',
+    'sekcje':    '/html/body/div[3]/div[4]/div/table/tbody/tr/td[2]/div/div/div/div/div/div[2]/fieldset/table/tbody/tr[2]/td/div/table/tbody/tr[1]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table/tbody/tr/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/table/tbody/tr[2]/td/div/table/tbody/tr[4]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table[1]/tbody/tr/td[1]/button',
+    'intra':     '/html/body/div[3]/div[4]/div/table/tbody/tr/td[2]/div/div/div/div/div/div[2]/fieldset/table/tbody/tr[2]/td/div/table/tbody/tr[1]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table/tbody/tr/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/table/tbody/tr[2]/td/div/table/tbody/tr[5]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table[1]/tbody/tr/td[1]/button'
+}
+
+arkusze = {
+    'histpat': 0,
+    'bac': 1,
+    'cytologia': 2,
+    'sekcje': 3,
+    'intra': 4
+}
+
+def arkusz(sheetName):
     lista = os.listdir('arkusz')
     duzaDf = pd.DataFrame()
     for l in range(len(lista)):
+        if not lista[l] == 'puszczanie-preparatow.xlsx':
+            continue
         try:
+            try:
+                sheetName = int(sheetName)
+            except ValueError:
+                pass
             xls_file = pd.ExcelFile(os.path.join('arkusz', lista[l]))
         except ValueError:
             print("Cannot read file "+lista[l], file=sys.stderr)
             continue
-        df = xls_file.parse(0)
+        df = xls_file.parse(sheet_name=sheetName)
         duzaDf = duzaDf.append(df, ignore_index=True)
         duzaDf = duzaDf.astype(str)
     if 'Asysta' in duzaDf.columns:
@@ -52,7 +76,7 @@ def arkusz():
         head, sep, tail = duzaDf.iat[i,1].partition(' ')
         duzaDf.iat[i,1] = head
         #wytworzenie inicjalow
-        duzaDf.iat[i,5] = duzaDf.iat[i,0][0] + '.' + duzaDf.iat[i,1][0] + '.'
+        duzaDf.iat[i,5] = duzaDf.iat[i,1][0] + '.' + duzaDf.iat[i,0][0] + '.'
         #identyfikacja plci
         if duzaDf.iat[i, 1].endswith("A") or duzaDf.iat[i, 1].endswith("a"):
             duzaDf.iat[i, 2] = 1
@@ -69,7 +93,7 @@ def dzialanie(table, rok, kod, nazwisko, miejsce, nazwa, xpath):
         #wait.until(EC.element_to_be_clickable((By.XPATH, "//body[1]/div[3]/div[4]/div[1]/table[1]/tbody[1]/tr[1]/td[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/fieldset[1]/table[1]/tbody[1]/tr[2]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/table[1]/tbody[1]/tr[2]/td[1]/div[1]/table[1]/tbody[1]/tr[5]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/button[1]"))).click()
         wait.until(EC.element_to_be_clickable((By.XPATH, xpath))).click()
     i = -1
-    for ii in range(table.shape[0]):
+    for ii in reversed(range(table.shape[0])):
         if (not float(table['Wstaw'][ii])) or math.isnan(float(table['Wstaw'][ii])):
             continue
         i += 1
@@ -119,7 +143,7 @@ class Okno(tkinter.Tk):
     def initialize(self):
         self.grid()
         stepOne = tkinter.LabelFrame(self, text=" Wypełnij zgodnie z instrukcją ")
-        stepOne.grid(row=0, columnspan=7, sticky='W',padx=5, pady=5, ipadx=5, ipady=5)
+        stepOne.grid(row=0, columnspan=8, sticky='W',padx=5, pady=5, ipadx=5, ipady=5)
         self.RokLbl = tkinter.Label(stepOne,text="Rok szkolenia")
         self.RokLbl.grid(row=0, column=0, sticky='E', padx=5, pady=2)
         self.RokTxt = tkinter.Entry(stepOne)
@@ -135,6 +159,7 @@ class Okno(tkinter.Tk):
         self.OsobaLbl = tkinter.Label(stepOne,text="Osoba wykonująca")
         self.OsobaLbl.grid(row=2, column=0, sticky='E', padx=5, pady=2)
         self.OsobaTxt = tkinter.Entry(stepOne)
+        #self.OsobaTxt.insert(tkinter.INSERT, 'Tu wpisz swoje imie i usuń komentarz')
         self.OsobaTxt.grid(row=2, column=1, columnspan=3, pady=2, sticky='WE')
         
         self.MiejsceLbl = tkinter.Label(stepOne,text="Miejsce wykonania (które miejsce na liscie)")
@@ -146,14 +171,30 @@ class Okno(tkinter.Tk):
         self.NazwaLbl = tkinter.Label(stepOne,text="Nazwa stażu (które miejsce na liscie)")
         self.NazwaLbl.grid(row=4, column=0, sticky='E', padx=5, pady=2)
         self.NazwaTxt = tkinter.Entry(stepOne)
-        self.NazwaTxt.insert(tkinter.INSERT, '1')
+        self.NazwaTxt.insert(tkinter.INSERT, '5')
         self.NazwaTxt.grid(row=4, column=1, columnspan=3, pady=2, sticky='WE')
         
+        # self.XpathLbl = tkinter.Label(stepOne,text="Xpath")
+        # self.XpathLbl.grid(row=5, column=0, sticky='E', padx=5, pady=2)
+        # self.XpathTxt = tkinter.Entry(stepOne)
+        # self.XpathTxt.insert(tkinter.INSERT, xpaths_list['bac'])
+        # self.XpathTxt.grid(row=5, column=1, columnspan=3, pady=2, sticky='WE')
+
         self.XpathLbl = tkinter.Label(stepOne,text="Xpath")
         self.XpathLbl.grid(row=5, column=0, sticky='E', padx=5, pady=2)
-        self.XpathTxt = tkinter.Entry(stepOne)
-        self.XpathTxt.insert(tkinter.INSERT, '/html/body/div[3]/div[4]/div/table/tbody/tr/td[2]/div/div/div/div/div/div[2]/fieldset/table/tbody/tr[2]/td/div/table/tbody/tr[1]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table/tbody/tr/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/table/tbody/tr[2]/td/div/table/tbody/tr[3]/td/div/table/tbody/tr[1]/td/div/div/div/table/tbody/tr/td/div/div/table[1]/tbody/tr/td[1]/button')
-        self.XpathTxt.grid(row=5, column=1, columnspan=3, pady=2, sticky='WE')
+        selected_xpath = tkinter.StringVar()
+        self.xpath_combo = tkinter.ttk.Combobox(stepOne, textvariable=selected_xpath)
+        self.xpath_combo['values'] = list(xpaths_list.keys())
+        self.xpath_combo.grid(row=5, column=1, columnspan=3, pady=2, sticky='WE')
+
+
+        self.SheetNameLbl = tkinter.Label(stepOne,text="Nazwa albo numer arkusza")
+        self.SheetNameLbl.grid(row=6, column=0, sticky='E', padx=5, pady=2)
+        self.SheetNameTxt = tkinter.Entry(stepOne)
+        self.SheetNameTxt.insert(tkinter.INSERT, '0')
+        self.SheetNameTxt.grid(row=6, column=1, columnspan=3, pady=2, sticky='WE')
+
+
         
         self.rok = None
         self.kod = None
@@ -161,9 +202,10 @@ class Okno(tkinter.Tk):
         self.miejsce = None
         self.nazwa = None
         self.xpath = None
+        self.sheetName = None
 
         GuzikWysylania = tkinter.Button(stepOne, text="Wyslij",command=self.wyslij)
-        GuzikWysylania.grid(row=6, column=3, sticky='W', padx=5, pady=2)
+        GuzikWysylania.grid(row=7, column=3, sticky='W', padx=5, pady=2)
 
     def wyslij(self):
         self.rok = self.RokTxt.get()
@@ -191,11 +233,20 @@ class Okno(tkinter.Tk):
             Win2=tkinter.Tk()
             Win2.withdraw()
         
-        self.xpath = self.XpathTxt.get()
+        # self.xpath = self.XpathTxt.get()
+        if '/' in self.xpath_combo.get() or self.xpath_combo.get() == "":
+            self.xpath = self.xpath_combo.get()
+        else:
+            self.xpath = xpaths_list[self.xpath_combo.get()]
         if self.xpath == "":
             Win2=tkinter.Tk()
             Win2.withdraw()
             
+        self.sheetName = self.SheetNameTxt.get()
+        if self.sheetName == "":
+            Win2=tkinter.Tk()
+            Win2.withdraw()
+
         self.quit()
         
 
@@ -213,13 +264,16 @@ except selenium.common.exceptions.WebDriverException:
 driver.maximize_window()
 wait = WebDriverWait(driver, 50, poll_frequency=1)
 driver.get("https://smk.ezdrowie.gov.pl/login.jsp?locale=pl")
-tabela = arkusz()
-app = Okno(None)
-app.title("SMK Rozkurwiator 0.6")
-app.mainloop() 
-arg = [app.rok, app.kod, app.osoba, app.miejsce, app.nazwa, app.xpath]
-# print(tabela)
-dzialanie(tabela, *arg)
-input()
+while True:
+    app = Okno(None)
+    app.title("SMK Rozkurwiator 0.6")
+    app.mainloop()
+    app.destroy()
+    arg = [app.rok, app.kod, app.osoba, app.miejsce, app.nazwa, app.xpath]
+    tabela = arkusz(app.sheetName)
+    # print(tabela)
+    # sys.exit(0)
+    dzialanie(tabela, *arg)
+# input()
 # if __name__ == "__main__":
 #     main()
