@@ -59,6 +59,7 @@ def arkusz(sheetName):
         df = xls_file.parse(sheet_name=sheetName)
         duzaDf = duzaDf.append(df, ignore_index=True)
         duzaDf = duzaDf.astype(str)
+        break
     if 'Asysta' in duzaDf.columns:
         duzaDf = duzaDf[['Nazwisko', 'Imię', 'Usługa', 'Data opisu badania', 'Asysta', 'Wstaw']]
         duzaDf.insert(2, 'Plec', '0')
@@ -68,33 +69,39 @@ def arkusz(sheetName):
         duzaDf.insert(2, 'Plec', '0')
         duzaDf.insert(5, 'Inicjały', '0')
         duzaDf.insert(6, 'Asysta', "")
-    
+
     for i in range(duzaDf.shape[0]):
+        czy_wstawic = float(duzaDf['Wstaw'][i])
+        if (not czy_wstawic) or math.isnan(czy_wstawic):
+            continue
         #konwersja daty
-        duzaDf.iat[i,4] = duzaDf.iat[i,4][0:10]
+        duzaDf['Data opisu badania'][i] = duzaDf['Data opisu badania'][i] [0:10]
         #obciecie whitespace i smieci po imieniu
-        head, sep, tail = duzaDf.iat[i,1].partition(' ')
-        duzaDf.iat[i,1] = head
+        head, sep, tail = duzaDf['Imię'][i].partition(' ')
+        duzaDf['Imię'][i] = head
         #wytworzenie inicjalow
-        duzaDf.iat[i,5] = duzaDf.iat[i,1][0] + '.' + duzaDf.iat[i,0][0] + '.'
+        duzaDf['Inicjały'][i] = duzaDf['Imię'][i][0] + '.' + duzaDf['Nazwisko'][i][0] + '.'
         #identyfikacja plci
-        if duzaDf.iat[i, 1].endswith("A") or duzaDf.iat[i, 1].endswith("a"):
-            duzaDf.iat[i, 2] = 1
+        if duzaDf['Imię'][i].endswith("A") or duzaDf['Imię'][i].endswith("a"):
+            duzaDf['Plec'][i] = 1
         #wywalenie nan z asysty
-        if duzaDf.iat[i, 6]=='nan': duzaDf.iat[i,6] = ""
+        if duzaDf['Asysta'][i]=='nan':
+            duzaDf['Asysta'][i] = ""
     return duzaDf
     
  
 def dzialanie(table, rok, kod, nazwisko, miejsce, nazwa, xpath):
     for i in range(table.shape[0]):
-        if (not float(table['Wstaw'][i])) or math.isnan(float(table['Wstaw'][i])):
+        czy_wstawic = float(table['Wstaw'][i])
+        if (not czy_wstawic) or math.isnan(czy_wstawic):
             continue
         #driver.find_element_by_xpath('//button[@title="Dodaj"]').click()
         #wait.until(EC.element_to_be_clickable((By.XPATH, "//body[1]/div[3]/div[4]/div[1]/table[1]/tbody[1]/tr[1]/td[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/fieldset[1]/table[1]/tbody[1]/tr[2]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/table[1]/tbody[1]/tr[2]/td[1]/div[1]/table[1]/tbody[1]/tr[5]/td[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[1]/button[1]"))).click()
         wait.until(EC.element_to_be_clickable((By.XPATH, xpath))).click()
     i = -1
     for ii in reversed(range(table.shape[0])):
-        if (not float(table['Wstaw'][ii])) or math.isnan(float(table['Wstaw'][ii])):
+        czy_wstawic = float(table['Wstaw'][ii])
+        if (not czy_wstawic) or math.isnan(czy_wstawic):
             continue
         i += 1
         #data
@@ -127,8 +134,10 @@ def dzialanie(table, rok, kod, nazwisko, miejsce, nazwa, xpath):
         wait.until(EC.element_to_be_clickable((By.XPATH, "//tbody/tr[" + str(i+1) + "]/td[9]/div[1]/input[1]"))).send_keys(table.iat[ii,5])
         #plec
         plec = Select(wait.until(EC.element_to_be_clickable((By.XPATH,"//tbody/tr[" + str(i+1) + "]/td[10]/div[1]/select[1]"))))
-        if table.iat[ii,2]==1: plec.select_by_value('K')
-        else: plec.select_by_value('M')
+        if table.iat[ii,2]==1:
+            plec.select_by_value('K')
+        else:
+            plec.select_by_value('M')
         #asysta
         wait.until(EC.element_to_be_clickable((By.XPATH, "//tbody/tr[" + str(i+1) + "]/td[11]/div[1]/input[1]"))).send_keys(table.iat[ii,6])
         #nazwaproc
